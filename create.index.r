@@ -1,27 +1,28 @@
-
 #install.packages("BBmisc")
 #library(BBmisc)
 
-rm(list = ls())
-
-library(scales)
-library(stats)
-library(Hmisc)
+# rm(list = ls())
+# 
+# library(scales)
+# library(stats)
+# library(Hmisc)
 
 # read data (to save running last function and reading in larger files)
+# EDIT: don't need to read this is as creating in by using the 'all.variables.LA <- get.all.GB.data.by.LA()' command in run.functions.R
+# all.variables.LA <-  read.csv("S:\\R&A\\Research Projects\\304 - BGET Advice need analysis and mapping\\07 Data\\variable.output.csv", stringsAsFactors = FALSE)
 
-all.variables.LA <-  read.csv("S:\\R&A\\Research Projects\\304 - BGET Advice need analysis and mapping\\07 Data\\variable.output.csv", stringsAsFactors = FALSE)
-
-create.GB.index <- function(){
-
+# EDIT: Added weights for index creation as parameters to the function so you can control these from run.functions.r 
+# rather than always changing the scripts here
+create.GB.index <- function(covid.economic.vulnerability.weight = 2,
+                            indebtedness.weight = 2,
+                            efg.wgt = 1,
+                            prs.wgt = 1,
+                            lone.p.wgt = 1,
+                            ethnicity.wgt = 1,
+                            low.inc.child.wgt = 1,
+                            ppm.wgt = 1) {
 
 ## rescale data, add together (double weigth covid vulnerability & indebtedness)
-
-## set weights  
-  
-covid.economic.vulnerability.weight = 2
-indebtedness.weight = 2
-  
 variables.with.index <<- all.variables.LA %>%
   mutate(economic.vulnerability.scaled = rescale(Population.weighted.economic.vulnerability.score),
          indebted.scaled = rescale(X..over.indebted),
@@ -33,14 +34,15 @@ variables.with.index <<- all.variables.LA %>%
          PPM.scaled = rescale(prop.PPM)) %>%
   mutate(need.index = (economic.vulnerability.scaled * covid.economic.vulnerability.weight +
                          indebted.scaled * indebtedness.weight +
-                          EFG.scaled + 
-                        PRS.scaled +         
-                         lone.parent.scaled +
-                       #  minority.ethnic.scaled +
-                         children.low.income.scaled)) %>%
-                       #  PPM.scaled)) %>%
+                         EFG.scaled * efg.wgt + 
+                         PRS.scaled * prs.wgt +         
+                         lone.parent.scaled * lone.p.wgt +
+                         minority.ethnic.scaled * ethnicity.wgt +
+                         children.low.income.scaled * low.inc.child.wgt + 
+                         PPM.scaled * ppm.wgt)) %>%
   mutate(need.decile = ntile(need.index, 10)) %>%
-  select(LAD19NM,
+  select(LAD19CD, # keep lsoa code for mapping - need to join to shape files and better to join by code than name (might vary between files).
+         LAD19NM,
          Region,
          need.decile,
          need.index,
@@ -49,7 +51,10 @@ variables.with.index <<- all.variables.LA %>%
          EFG.scaled,
          PRS.scaled,
          lone.parent.scaled,
-         children.low.income.scaled)
+         minority.ethnic.scaled,
+         children.low.income.scaled,
+         PPM.scaled
+         )
   
 
 }
