@@ -1,4 +1,7 @@
-ONSPD <- read.csv("ONSPD_NOV_2019_UK.csv", stringsAsFactors = FALSE)
+# This script only needs to run if recreating the lsoa.to.la.lup file. This file has been saved in the repository anyway, so this shouldn't need to be
+# but if it is, note location of the ONSPD - it will need to be saved in "data"...
+
+ONSPD <- read.csv("data/ONSPD_NOV_2019_UK.csv", stringsAsFactors = FALSE)
 
 #make a lookup - however some LSOAs straddle multiple LAs (only about 30, so need to select LA that most of the LSOA falls into)
 lookup <- ONSPD %>%
@@ -34,7 +37,7 @@ lookup <- lookup %>%
          LAD19CD = oslaua)
 
 # read in names and add to lookup
-la.names <- read.csv("../GB-vulnerability-and-social-indicators/inputs/onspd/Documents/LA_UA names and codes UK as at 12_19.csv",
+la.names <- read.csv("data/LA_UA names and codes UK as at 12_19.csv",
                      stringsAsFactors = FALSE)
 
 #column headings read in in weird format so change
