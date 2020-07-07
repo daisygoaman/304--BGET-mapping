@@ -8,7 +8,7 @@ library(scales)
 library(stats)
 library(Hmisc)
 
-# read data and rescale 0 to 1
+# read data (to save running last function and reading in larger files)
 
 all.variables.LA <-  read.csv("S:\\R&A\\Research Projects\\304 - BGET Advice need analysis and mapping\\07 Data\\variable.output.csv", stringsAsFactors = FALSE)
 
@@ -17,6 +17,11 @@ create.GB.index <- function(){
 
 ## rescale data, add together (double weigth covid vulnerability & indebtedness)
 
+## set weights  
+  
+covid.economic.vulnerability.weight = 2
+indebtedness.weight = 2
+  
 variables.with.index <<- all.variables.LA %>%
   mutate(economic.vulnerability.scaled = rescale(Population.weighted.economic.vulnerability.score),
          indebted.scaled = rescale(X..over.indebted),
@@ -26,18 +31,16 @@ variables.with.index <<- all.variables.LA %>%
          minority.ethnic.scaled = rescale(prop.minority.ethnic),
          children.low.income.scaled = rescale(Prop.children.in.low.income.households),
          PPM.scaled = rescale(prop.PPM)) %>%
-  mutate(need.index = (economic.vulnerability.scaled +
-                        economic.vulnerability.scaled +
-                         indebted.scaled + 
-                         indebted.scaled +
-                         EFG.scaled + 
+  mutate(need.index = (economic.vulnerability.scaled * covid.economic.vulnerability.weight +
+                         indebted.scaled * indebtedness.weight +
+                          EFG.scaled + 
                         PRS.scaled +         
                          lone.parent.scaled +
                        #  minority.ethnic.scaled +
                          children.low.income.scaled)) %>%
                        #  PPM.scaled)) %>%
   mutate(need.decile = ntile(need.index, 10)) %>%
-  select(LAD17NM,
+  select(LAD19NM,
          Region,
          need.decile,
          need.index,
@@ -78,7 +81,7 @@ variables.with.filtered.index <<- all.variables.LA %>%
                            covid.risk.factors)) %>% 
   mutate(economic.vulnerability.quintile = ntile(economic.vulnerability.scaled, 5)) %>% 
   filter(economic.vulnerability.quintile == 5) %>%
-  select(LAD17NM,
+  select(LAD19NM,
          Region,
          need.index.2,
          indebted.scaled,

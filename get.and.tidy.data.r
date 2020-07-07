@@ -41,24 +41,43 @@ GBsocialindicators$efg.n[is.na(GBsocialindicators$efg.n)] <- 0
 
 #get lookup
 
-lookup1117 <- read.csv("S:\\R&A\\Research Projects\\304 - BGET Advice need analysis and mapping\\07 Data\\Output_Area_to_LSOA_to_MSOA_to_Local_Authority_District__December_2017__Lookup_with_Area_Classifications_in_Great_Britain (2).csv", stringsAsFactors = FALSE)
-lookup1117 <- lookup1117 %>%
-  select ("LSOA11CD",
-          "LSOA11NM",
-          "LAD17CD",
-          "LAD17NM",
-          "RGN11NM") %>%
-  mutate(lsoa.code = LSOA11CD)
+#lookup1117 <- read.csv("S:\\R&A\\Research Projects\\304 - BGET Advice need analysis and mapping\\07 Data\\Output_Area_to_LSOA_to_MSOA_to_Local_Authority_District__December_2017__Lookup_with_Area_Classifications_in_Great_Britain (2).csv", stringsAsFactors = FALSE)
+#lookup1117 <- lookup1117 %>%
+ # select ("LSOA11CD",
+ #         "LSOA11NM",
+ #         "LAD17CD",
+ #         "LAD17NM",
+ #         "RGN11NM") %>%
+#  mutate(lsoa.code = LSOA11CD)
+
+ONSPD <- read.csv("ONSPD_NOV_2019_UK.csv", stringsAsFactors = FALSE)
+lookup <- ONSPD%>%
+  select(lsoa11,
+         oslaua) %>%
+  distinct() %>%
+  rename(lsoa.code = lsoa11,
+         LAD19CD = oslaua)
+  
+  
 
 
-GBsocialindicatorswithLA <- left_join(GBsocialindicators, lookup1117, by = "lsoa.code")
+#lookup1119 <- read.csv("S:\\R&A\\Team Resources\\DATASETS\\ONS lookups\\ONSPD\\ONSPD_NOV_2019_UK.zip\\Data\\ONSPD_NOV_2019_UK.csv", stringsAsFactors = FALSE)
+ #lookup <- lookup1119 %>%
+ #  select ("LSOA11CD",
+  #         "LSOA11NM",
+  #         "LAD19CD",
+   #        "LAD19NM") %>%
+  # mutate(lsoa.code = LSOA11CD) 
+  # subset(!duplicated(lsoa.code))
+ 
 
-## *Glasgow check - GBsocialindicatorswithLA - countains Glasgow City S12000046
+GBsocialindicatorswithLA <- left_join(GBsocialindicators, lookup, by = "lsoa.code")
+
 
 # get at LA
 
 GBindicatorsLA <- GBsocialindicatorswithLA %>%
-  group_by(LAD17CD) %>%
+  group_by(LAD19CD) %>%
   summarise(LA.pop = sum(population),
             LA.households = sum(households.n),
             LA.EFG = sum(efg.n),
@@ -72,19 +91,17 @@ GBindicatorsLA <- GBsocialindicatorswithLA %>%
 ## Glasgow check: GB data is blank?! S12000046 contains household, EFG - not GB
 
 
-                             
 # get PPM and add PPM.n
 
 PPM <- read.csv("S:\\R&A\\Research Projects\\304 - BGET Advice need analysis and mapping\\07 Data\\PrePaymentMeter\\Local-authority-prepayment-electricity-statistics-2017 (1).csv", stringsAsFactors = FALSE)
 PPM <- PPM %>%
-  mutate(LAD17NM = Local.Authority,
-         LAD17CD = LA.Code,
+  mutate(LAD19NM = Local.Authority,
+         LAD19CD = LA.Code,
          PPM.n = Meters) %>%
   mutate(PPM.n = as.numeric(PPM.n)) %>%
-  select(LAD17NM,
-         LAD17CD,
-         PPM.n,
-         Region)
+  select(LAD19NM,
+         LAD19CD,
+         PPM.n)   
 
 ## *Glasgow check - PPM - countains Glasgow City S12000046
 
@@ -92,7 +109,7 @@ PPM <- PPM %>%
 #  as.numeric(PPM$PPM.n)
 
 
-GBindicatorsLA <- left_join(GBindicatorsLA, PPM, by = "LAD17CD")
+GBindicatorsLA <- left_join(GBindicatorsLA, PPM, by = "LAD19CD")
 
 
 # get n data at %
@@ -103,8 +120,8 @@ GBindicatorsLA <- GBindicatorsLA %>%
          prop.lone.parent = LA.lone.parent.n / LA.households,
          prop.PPM = PPM.n / LA.households,
          prop.minority.ethnic = LA.minority.ethnicity / LA.pop) %>%
-  select(LAD17CD,
-         Region,
+  select(LAD19CD,
+       #  Region,
          prop.EFG,
          prop.private.rented,
          prop.lone.parent,
@@ -120,18 +137,18 @@ GBindicatorsLA <- GBindicatorsLA %>%
   # select variables and rename LA variable
   
   redcrosscovid <- redcrosscovid %>%
-    rename(LAD17CD = Code,
-           LAD17NM = Name) %>%
-    select(LAD17CD,
-           LAD17NM,
+    rename(LAD19CD = Code,
+           LAD19NM = Name) %>%
+    select(LAD19CD,
+         #  LAD19NM,
            Population.weighted.economic.vulnerability.score)
   
   #get extra LA names and codes (2019 data from new unitary authorities applied to non-unitary authorities from 2017)
   
-  extra.LAs <- read.csv("S:\\R&A\\Research Projects\\304 - BGET Advice need analysis and mapping\\07 Data\\extra.2017.LAs.csv", stringsAsFactors = FALSE)
+ # extra.LAs <- read.csv("S:\\R&A\\Research Projects\\304 - BGET Advice need analysis and mapping\\07 Data\\extra.2017.LAs.csv", stringsAsFactors = FALSE)
   
   
-  redcrosscovid <- rbind(redcrosscovid, extra.LAs)
+ # redcrosscovid <- rbind(redcrosscovid, extra.LAs)
   
 
 ## get MAPS data
@@ -140,11 +157,20 @@ MAPSindebtedness <- read.csv("S:\\R&A\\Research Projects\\304 - BGET Advice need
 
 
 MAPSindebtedness <- MAPSindebtedness %>%
-  rename( LAD17CD = Area.ID,
-          LAD17NM = Lower.Tier.Authority) %>%
-  select(LAD17CD,
-         X..over.indebted)
+  rename( LAD19CD = Area.ID,
+          LAD19NM = Lower.Tier.Authority) %>%
+  select(LAD19CD,
+         X..over.indebted,
+         Region,
+         LAD19NM)
 
+indebted2019LAs <- read.csv("S:\\R&A\\Research Projects\\304 - BGET Advice need analysis and mapping\\07 Data\\Indebtedness\\19LAs-MAPS-indebtedness.csv", stringsAsFactors = FALSE) %>%
+  mutate(LAD19CD = LADCD) %>%
+   select(LAD19CD,
+        X..over.indebted,
+        Region)
+
+MAPSindebtedness <- rbind(MAPSindebtedness, indebted2019LAs)
 
 
 #PPM <- read.csv("S:\\R&A\\Research Projects\\304 - BGET Advice need analysis and mapping\\07 Data\\PrePaymentMeter\\Local-authority-prepayment-electricity-statistics-2017 (1).csv", stringsAsFactors = FALSE)
@@ -158,12 +184,12 @@ MAPSindebtedness <- MAPSindebtedness %>%
    #       Region)
 
 
-  all.variables.LA <- left_join(MAPSindebtedness, redcrosscovid, by = "LAD17CD")
+  all.variables.LA <- left_join(redcrosscovid, MAPSindebtedness, by = "LAD19CD")
   
-  all.variables.LA <- left_join(all.variables.LA, GBindicatorsLA, by = "LAD17CD") %>%
-    select( LAD17CD,
-            LAD17NM,
-         Region,
+  all.variables.LA <- left_join(all.variables.LA, GBindicatorsLA, by = "LAD19CD") %>%
+    select( LAD19CD,
+            LAD19NM,
+           Region,
 Population.weighted.economic.vulnerability.score,                
             X..over.indebted,                                
              prop.EFG,                                       
@@ -177,7 +203,7 @@ Population.weighted.economic.vulnerability.score,
 # remove N.Ireland
   
   all.variables.LA <<- all.variables.LA %>%
-    filter(!str_detect(LAD17CD, "^N")) 
+    filter(!str_detect(LAD19CD, "^N")) 
   
   
 write.csv(all.variables.LA, "S:\\R&A\\Research Projects\\304 - BGET Advice need analysis and mapping\\07 Data\\variable.output.csv", row.names = TRUE)
